@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartMess Feedback Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background-color: #f9fafb;
+      color: #111827;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      background: white;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 24px;
+      color: #1f2937;
+    }
+
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    select, textarea, button {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    button {
+      background-color: #2563eb;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .feedback-list {
+      margin-top: 32px;
+    }
+
+    .feedback-item {
+      background: #f3f4f6;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    canvas {
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>SmartMess: Daily Meal Feedback</h1>
+
+    <label for="rating">Rate today’s meal (1 to 5)</label>
+    <select id="rating">
+      <option value="1">1 - Very Poor</option>
+      <option value="2">2 - Poor</option>
+      <option value="3">3 - Average</option>
+      <option value="4">4 - Good</option>
+      <option value="5">5 - Excellent</option>
+    </select>
+
+    <label for="comment">Additional Comments (optional)</label>
+    <textarea id="comment" rows="3" placeholder="Write your thoughts here..."></textarea>
+
+    <button onclick="submitFeedback()">Submit Feedback</button>
+
+    <div class="feedback-list" id="feedbackList"></div>
+
+    <canvas id="feedbackChart" width="400" height="200"></canvas>
+  </div>
+
+  <script>
+    const feedbacks = JSON.parse(localStorage.getItem("feedbacks") || "[]");
+
+    function submitFeedback() {
+      const rating = parseInt(document.getElementById("rating").value);
+      const comment = document.getElementById("comment").value.trim();
+
+      const feedback = {
+        rating,
+        comment,
+        time: new Date().toLocaleString(),
+      };
+
+      feedbacks.push(feedback);
+      localStorage.setItem("feedbacks", JSON.stringify(feedbacks));
+      renderFeedback();
+      updateChart();
+
+      document.getElementById("comment").value = "";
+    }
+
+    function renderFeedback() {
+      const container = document.getElementById("feedbackList");
+      container.innerHTML = "";
+
+      [...feedbacks].reverse().slice(0, 5).forEach((fb) => {
+        const div = document.createElement("div");
+        div.className = "feedback-item";
+        div.innerHTML = `<strong>Rating:</strong> ${fb.rating} ★<br/><strong>Comment:</strong> ${fb.comment || "-"}<br/><small>${fb.time}</small>`;
+        container.appendChild(div);
+      });
+    }
+
+    function updateChart() {
+      const ratings = [0, 0, 0, 0, 0];
+      feedbacks.forEach(fb => ratings[fb.rating - 1]++);
+
+      if (window.myChart) window.myChart.destroy();
+
+      const ctx = document.getElementById("feedbackChart").getContext("2d");
+      window.myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['1 ★', '2 ★', '3 ★', '4 ★', '5 ★'],
+          datasets: [{
+            label: '# of Ratings',
+            data: ratings,
+            backgroundColor: '#60a5fa',
+            borderRadius: 8,
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 1
+              }
+            }
+          }
+        }
+      });
+    }
+
+    renderFeedback();
+    updateChart();
+  </script>
+</body>
+</html>
